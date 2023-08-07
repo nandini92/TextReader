@@ -1,101 +1,48 @@
 const sdk = require("microsoft-cognitiveservices-speech-sdk");
 const router = require("express").Router();
-const fs = require("fs");
-const path = require("path");
-const rangeParser = require("range-parser");
+const { Readable } = require("stream");
 
 require("dotenv").config();
 
-const generateAudioFile = async (text) => {
-  //  speakTextAsync function is asynchronous, and it doesn't return a Promise that can be awaited.
-  //  To properly handle the asynchronous behavior and wait for the audio file generation to complete, speakTextAsync is wrapped in a Promise and resolved or rejected based on the completion or error of the synthesis process.
-  return new Promise((resolve, reject) => {
-    const audioFile = "Audio.wav";
+const generateAudioFile = async (text, res) => {
+  const speechConfig = sdk.SpeechConfig.fromSubscription(
+    process.env.SPEECH_KEY,
+    process.env.SPEECH_REGION
+  );
 
-    const speechConfig = sdk.SpeechConfig.fromSubscription(
-      process.env.SPEECH_KEY,
-      process.env.SPEECH_REGION
-    );
+  speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
 
-    // Currently the text reader works for strings shorter than 1s. AudioConfig.fromAudioFileOutput method, generates a single audio file and saves it to disk
-    // TODO: use the AudioConfig.fromStreamOutput method to directly stream the audio data to the response.
-    const audioConfig = sdk.AudioConfig.fromAudioFileOutput(audioFile);
+  let synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
-    speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
-
-    let synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
-    
-    synthesizer.speakTextAsync(
-      text,
-      (result) => {
-        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
-          console.log("synthesis finished.");
-          resolve("Synthesis successful.");
-        } else {
-          console.error(
-            "Speech synthesis canceled, " +
-              result.errorDetails +
-              "\nDid you set the speech resource key and region values?"
-          );
-          reject(new Error("Speech synthesis canceled."));
-        }
-        synthesizer.close();
-        synthesizer = null;
-      },
-      (err) => {
-        console.trace("err - " + err);
-        reject(err);
-        synthesizer.close();
-        synthesizer = null;
-      }
-    );
-  });
-};
-
-router.post("/audio", async (req, res) => {
-  const result = await generateAudioFile(req.body.text);
-
-  if(result !== "Synthesis successful.") {
-    res.status(500).send(result);
-  }
-
-  const audioFilePath = path.join(__dirname, "Audio.wav");
-  const stat = fs.statSync(audioFilePath);
-  const fileSize = stat.size;
-  const range = req.headers.range;
-
-  console.log("Audio file size:", fileSize);
-  console.log("Range received:", range);
-
-  if (range) {
-    const parts = rangeParser(fileSize, range);
-
-    if (parts) {
-      const start = parts[0].start;
-      const end = parts[0].end;
-
-      const chunkSize = end - start + 1;
-      const file = fs.createReadStream(audioFilePath, { start, end });
-
+  /* speakTextAsync has been modified to produce an ArrayBuffer object called audioData. The function takes an ArrayBuffer as input and converts it to Buffer using Buffer.from(arrayBuffer). Then, it creates a Readable stream, pushes the Buffer data to the stream using stream.push(buffer), and finally signals the end of the stream using stream.push(null). */
+  synthesizer.speakTextAsync(
+    text,
+    (result) => {
+      const buffer = Buffer.from(result.audioData);
+      const readable = new Readable();
       res.writeHead(206, {
-        "Content-Range": `bytes ${start}-${end}/${fileSize}`,
-        "Content-Length": chunkSize,
         "Accept-Ranges": "bytes",
         "Content-Type": "audio/wav",
       });
 
-      file.pipe(res);
-    } else {
-      res.status(416).send("Requested Range Not Satisfiable");
-    }
-  } else {
-    res.writeHead(200, {
-      "Content-Length": fileSize,
-      "Content-Type": "audio/wav",
-    });
+      readable.push(buffer);
+      readable.push(null); //signal end of the stream
 
-    fs.createReadStream(audioFilePath).pipe(res);
-  }
+      readable.pipe(res); // Pipe redirects the readable stream to a writable stream (res);
+
+      synthesizer.close();
+
+    },
+    (error) => {
+      console.log(error);
+      synthesizer.close();
+      res.status(500).send("Failed to produce audio stream");
+    }
+  );
+};
+
+router.post("/audio", async (req, res) => {
+  generateAudioFile(req.body.text, res);
 });
 
 module.exports = router;
