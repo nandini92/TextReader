@@ -46,7 +46,12 @@ const generateAudioFile = async (text, res) => {
   );
 };
 
+
+// Handler for browser pre-flight request
+// https://stackoverflow.com/questions/29954037/why-is-an-options-request-sent-and-can-i-disable-it
 router.options("/audio", (req, res) => {
+
+  // https://dev.to/ifeanyichima/i-broke-dave-grays-code-3045
   res.set({
     "Access-Control-Allow-Origin": req.headers.origin,
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
