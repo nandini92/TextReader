@@ -1,0 +1,18 @@
+{
+    "manifest_version": 3,
+    "name": "My Extension",
+    "version": "1.0.1",
+    "description": "A plain text description",
+    "icons": {
+        "16": "images/laptop-svgrepo-com.png",
+        "32": "images/laptop-svgrepo-com.png",
+        "48": "images/laptop-svgrepo-com.png",
+        "128": "images/laptop-svgrepo-com.png"
+      },
+    "content_scripts": [
+        {
+          "matches": ["<all_urls>"],
+          "js": ["scripts/content.js"]
+        }
+      ]
+  }

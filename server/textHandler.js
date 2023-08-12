@@ -18,6 +18,7 @@ const generateAudioFile = async (text, res) => {
   synthesizer.speakTextAsync(
     text,
     (result) => {
+      console.log("Synthesizer start...");
       const buffer = Buffer.from(result.audioData);
       const readable = new Readable();
       res.writeHead(206, {
@@ -25,10 +26,14 @@ const generateAudioFile = async (text, res) => {
         "Content-Type": "audio/wav",
       });
 
+      console.log("Buffer start...");
+
       readable.push(buffer);
       readable.push(null); //signal end of the stream
 
       readable.pipe(res); // Pipe redirects the readable stream to a writable stream (res);
+
+      console.log("Buffer complete...");
 
       synthesizer.close();
 
@@ -41,7 +46,21 @@ const generateAudioFile = async (text, res) => {
   );
 };
 
+router.options("/audio", (req, res) => {
+  res.set({
+    "Access-Control-Allow-Origin": req.headers.origin,
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    "Access-Control-Expose-Headers": "*",
+  });
+
+  res.sendStatus(200);
+})
+
 router.post("/audio", async (req, res) => {
+  res.set({
+    "Access-Control-Allow-Origin": req.headers.origin
+  });
+  
   generateAudioFile(req.body.text, res);
 });
 
