@@ -8,11 +8,17 @@ if (article) {
   fetch("http://localhost:8000/audio", {
     method: "POST",
     headers: {
-      Origin: "https://developer.chrome.com/",
+      Origin: document.URL,
       Accept: "*/*",
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ text: text }),
   })
-  .then((res) => window.alert(res));
+  .then((res) => {
+    console.log("Send audio to background...");
+    const audioBlob = res.body.getReader().blob();
+    return chrome.runtime.sendMessage({from: 'content-script', message: audioBlob});
+  })
+  .then((res) => console.log(res))
+  .catch((err) => console.log(err));
 }
