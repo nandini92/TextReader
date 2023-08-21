@@ -1,23 +1,34 @@
 (async () => {
   console.log("popup started");
-//   const [tab] = await chrome.tabs.query({
-//     active: true,
-//     lastFocusedWindow: true,
-//   });
-//   console.log(tab);
 
-  const response = await chrome.runtime.sendMessage({from: 'popup', message: "get audio"});
+  const response = await chrome.runtime.sendMessage({
+    from: "popup",
+    message: "get audio",
+  });
+
   // do something with response here, not outside the function
   console.log("Received message from background...");
   console.log(response.message);
 
-    // Create audio element and set the Blob as source
-    const audio = new Audio();
-    audio.src = URL.createObjectURL(response.message);
+  // Fetch the audio stream from the backend
+  const audioStream = await fetch("http://localhost:8000/audio", {
+    method: "POST",
+    headers: {
+      Origin: document.URL,
+      Accept: "audio/*",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text: response.message }),
+  }).then((res) => res.arrayBuffer());
 
-    // Append the audio element to the popup's DOM
-    document.getElementById("audioContainer").appendChild(audio);
+  // Get the audio element
+  const audio = document.getElementById("audioContainer");
 
-    // Play the audio
-    audio.play();
+  // Convert the ArrayBuffer to a Blob and create an object URL
+  const blob = new Blob([audioStream], { type: "audio/wav" });
+  const blobUrl = URL.createObjectURL(blob);
+
+  // Set the Blob URL as the source of the audio element
+  audio.src = blobUrl;
+
 })();

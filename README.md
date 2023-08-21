@@ -12,15 +12,13 @@ The Speech service provides speech to text and text to speech capabilities with 
 
 Front is a chrome extension containing a popup.html to displayer the audio player and 3 layers of scripts: 
 
-i. content.js - to collect article text from page and fetch audio from backend.
+i. content.js - to collect article text from page.
 ii. background.js - service worker to handle messages from content.js and popup.js.
-iii. popup.js - to serve audio file to popup.html
+iii. popup.js - to fetch audio from backend and serve audio file to popup.html
 
 ### Challenges
 
-In order to pass the audio stream from content.js to the popup.js player. Currently content.js converts the stream into a blob to be passed on to background.js and then popup.js. However, on converting the blob to an object URL results in this error: 
-
-TypeError: Failed to execute 'createObjectURL' on 'URL': Overload resolution failed.
+Currently popup.js retriggers fetch everytime it is closed and opened. We need to identify a way to persist the audio as long as the tab is open to reduce the calls to the backend. 
 
 ## Backend
 

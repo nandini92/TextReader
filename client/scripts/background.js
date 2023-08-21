@@ -1,8 +1,6 @@
 console.log("Service worker started");
 
 (async () => {
-    // const [tab] = await chrome.tabs.query({active: true, lastFocusedWindow: true});
-    // console.log(tab);
     const audioQueue = [];
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -23,7 +21,3 @@ console.log("Service worker started");
         }
     })
   })();
-
-  const getAudioQueue = () => {
-    return audioQueue;
-  }
