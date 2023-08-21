@@ -18,6 +18,7 @@ console.log("Service worker started");
 
         if(message.from === 'popup'){
             console.log("Received message from popup...");
+            console.log(audioQueue[0]);
             sendResponse({from: 'background', message: audioQueue[0]});
         }
     })
