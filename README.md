@@ -18,7 +18,8 @@ iii. popup.js - to fetch audio from backend and serve audio file to popup.html
 
 ### Challenges
 
-Currently popup.js retriggers fetch everytime it is closed and opened. We need to identify a way to persist the audio as long as the tab is open to reduce the calls to the backend. 
+1. Currently popup.js retriggers fetch everytime it is closed and opened. We need to identify a way to persist the audio as long as the tab is open to reduce the calls to the backend. 
+2. Create a more robust scraper for the frontend. Currently it is simply looking for the first article tag.
 
 ## Backend
 
